@@ -1,0 +1,69 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-assistant-backend
+    profiles: [ "online" ]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      default:
+        aliases:
+          - backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend-offline:
+    build:
+      context: ./backend-offline
+      dockerfile: Dockerfile
+    container_name: ai-assistant-backend-offline
+    profiles: [ "offline" ]
+    networks:
+      default:
+        aliases:
+          - backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  frontend-online:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-assistant-frontend-online
+    profiles: [ "online" ]
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend-offline:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-assistant-frontend-offline
+    profiles: [ "offline" ]
+    ports:
+      - "3000:80"
+    depends_on:
+      backend-offline:
+        condition: service_healthy
+    restart: unless-stopped

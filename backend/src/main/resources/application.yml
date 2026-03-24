@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+  model: gpt-4o
+  tts-model: tts-1
+  tts-voice: nova
+  whisper-model: whisper-1
+  base-url: https://api.openai.com/v1
+
+cors:
+  allowed-origins: http://localhost:5173,http://localhost:3000,http://localhost
