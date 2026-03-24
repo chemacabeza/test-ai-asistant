@@ -305,10 +305,23 @@ export default function App() {
         }
     }, [isOnline, isRecording, startRecording, stopRecording, processAudioOnline, processOfflineVoice, status]);
 
-    // Track continuous mode
+    // Auto-start recording when switching to continuous mode
     useEffect(() => {
-        continuousRef.current = mode === 'continuous' && status === 'idle';
-    }, [mode, status]);
+        if (mode === 'continuous' && status === 'idle') {
+            if (isOnline) {
+                startRecording()
+                    .then(() => setStatus('recording'))
+                    .catch((err) => {
+                        setError(err.message);
+                        setStatus('error');
+                    });
+            } else {
+                setStatus('recording');
+                processOfflineVoice();
+            }
+        }
+        continuousRef.current = mode === 'continuous';
+    }, [mode]);
 
     // Cleanup on unmount
     useEffect(() => {
