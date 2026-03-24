@@ -32,6 +32,8 @@ export default function App() {
     const { isRecording, startRecording, stopRecording } = useAudioRecorder();
     const audioRef = useRef(null);
     const continuousRef = useRef(false);
+    const autoStopTimerRef = useRef(null);
+    const CONTINUOUS_RECORD_DURATION = 5000; // Auto-stop recording after 5 seconds
 
     // Build conversation history for the API (last 20 messages)
     const getConversationHistory = useCallback(() => {
@@ -78,6 +80,7 @@ export default function App() {
                 } catch (ttsErr) {
                     console.warn('Offline TTS failed, skipping:', ttsErr.message);
                 }
+                // After offline TTS completes, set idle (the continuous useEffect will restart)
                 setStatus('idle');
             } catch (err) {
                 console.error('Offline processing error:', err);
@@ -305,23 +308,43 @@ export default function App() {
         }
     }, [isOnline, isRecording, startRecording, stopRecording, processAudioOnline, processOfflineVoice, status]);
 
-    // Auto-start recording when switching to continuous mode
+    // Auto-start recording when in continuous mode and idle
     useEffect(() => {
-        if (mode === 'continuous' && status === 'idle') {
-            if (isOnline) {
-                startRecording()
-                    .then(() => setStatus('recording'))
-                    .catch((err) => {
-                        setError(err.message);
-                        setStatus('error');
-                    });
-            } else {
-                setStatus('recording');
-                processOfflineVoice();
-            }
-        }
         continuousRef.current = mode === 'continuous';
-    }, [mode]);
+
+        if (mode === 'continuous' && status === 'idle') {
+            // Small delay to avoid re-triggering too fast
+            const restartTimer = setTimeout(() => {
+                if (isOnline) {
+                    startRecording()
+                        .then(() => {
+                            setStatus('recording');
+                            // Auto-stop after CONTINUOUS_RECORD_DURATION
+                            autoStopTimerRef.current = setTimeout(async () => {
+                                const blob = await stopRecording();
+                                if (blob) {
+                                    processAudioOnline(blob);
+                                }
+                            }, CONTINUOUS_RECORD_DURATION);
+                        })
+                        .catch((err) => {
+                            setError(err.message);
+                            setStatus('error');
+                        });
+                } else {
+                    setStatus('recording');
+                    processOfflineVoice();
+                }
+            }, 500);
+
+            return () => {
+                clearTimeout(restartTimer);
+                if (autoStopTimerRef.current) {
+                    clearTimeout(autoStopTimerRef.current);
+                }
+            };
+        }
+    }, [mode, status]);
 
     // Cleanup on unmount
     useEffect(() => {
