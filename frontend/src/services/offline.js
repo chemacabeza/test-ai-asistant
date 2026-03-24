@@ -130,6 +130,8 @@ export function offlineTranscribe(language) {
             return;
         }
 
+        let resolved = false;
+
         const recognition = new SpeechRecognition();
         recognition.lang = LANGUAGE_CODES[language] || 'en-US';
         recognition.interimResults = false;
@@ -137,20 +139,30 @@ export function offlineTranscribe(language) {
         recognition.continuous = false;
 
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            resolve(transcript);
+            if (!resolved) {
+                resolved = true;
+                const transcript = event.results[0][0].transcript;
+                resolve(transcript);
+            }
         };
 
         recognition.onerror = (event) => {
-            if (event.error === 'no-speech') {
-                resolve('');
-            } else {
-                reject(new Error(`Speech recognition error: ${event.error}`));
+            if (!resolved) {
+                resolved = true;
+                if (event.error === 'no-speech') {
+                    resolve('');
+                } else {
+                    reject(new Error(`Speech recognition error: ${event.error}`));
+                }
             }
         };
 
         recognition.onend = () => {
-            // If no result was fired, resolve with empty
+            // If no result or error was fired, resolve with empty string
+            if (!resolved) {
+                resolved = true;
+                resolve('');
+            }
         };
 
         recognition.start();
