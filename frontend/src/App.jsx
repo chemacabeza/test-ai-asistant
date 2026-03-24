@@ -312,7 +312,16 @@ export default function App() {
     useEffect(() => {
         continuousRef.current = mode === 'continuous';
 
-        if (mode === 'continuous' && status === 'idle') {
+        // When leaving continuous mode, clean up auto-stop timer
+        if (mode !== 'continuous') {
+            if (autoStopTimerRef.current) {
+                clearTimeout(autoStopTimerRef.current);
+                autoStopTimerRef.current = null;
+            }
+            return;
+        }
+
+        if (status === 'idle') {
             // Small delay to avoid re-triggering too fast
             const restartTimer = setTimeout(() => {
                 if (isOnline) {
@@ -337,12 +346,8 @@ export default function App() {
                 }
             }, 500);
 
-            return () => {
-                clearTimeout(restartTimer);
-                if (autoStopTimerRef.current) {
-                    clearTimeout(autoStopTimerRef.current);
-                }
-            };
+            // Only clear the restart delay — NOT the auto-stop timer
+            return () => clearTimeout(restartTimer);
         }
     }, [mode, status]);
 
