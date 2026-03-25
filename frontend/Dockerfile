@@ -5,16 +5,16 @@
 # ============================================
 
 # --- Build stage ---
-FROM node:18-alpine AS build
+FROM node:18 AS build
 WORKDIR /app
 
-# Cache dependencies first
-COPY package.json package-lock.json* ./
-RUN npm install
+# Ensure we have a clean slate for the target environment
+COPY package.json ./
+RUN rm -f package-lock.json && npm install
 
 # Copy source and build
 COPY . .
-RUN npm run build
+RUN ls -la node_modules/.bin && ./node_modules/.bin/vite build
 
 # --- Runtime stage ---
 FROM nginx:alpine

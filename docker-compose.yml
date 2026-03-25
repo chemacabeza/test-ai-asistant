@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      network: host
     container_name: ai-assistant-backend
     profiles: [ "online" ]
     environment:
@@ -26,6 +27,7 @@ services:
     build:
       context: ./backend-offline
       dockerfile: Dockerfile
+      network: host
     container_name: ai-assistant-backend-offline
     profiles: [ "offline" ]
     networks:
@@ -46,6 +48,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      network: host
     container_name: ai-assistant-frontend-online
     profiles: [ "online" ]
     ports:
@@ -59,6 +62,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      network: host
     container_name: ai-assistant-frontend-offline
     profiles: [ "offline" ]
     ports:

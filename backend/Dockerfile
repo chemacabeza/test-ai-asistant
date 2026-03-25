@@ -8,9 +8,9 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Cache dependencies first
+# Cache dependencies first — increase retries for unstable connections
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:go-offline -B -Dhttp.keepAlive=false -Dmaven.wagon.http.retryHandler.count=3
 
 # Copy source and build
 COPY src ./src
