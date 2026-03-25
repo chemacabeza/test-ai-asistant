@@ -17,11 +17,11 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 # --- Runtime stage ---
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Add non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd appgroup && useradd -g appgroup appuser
 
 COPY --from=build /app/target/*.jar app.jar
 
